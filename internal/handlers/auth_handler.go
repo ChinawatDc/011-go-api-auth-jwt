@@ -8,6 +8,7 @@ import (
 	"github.com/ChinawatDc/011-go-api-auth-jwt/internal/middlewares"
 	"github.com/ChinawatDc/011-go-api-auth-jwt/internal/repositories"
 	"github.com/ChinawatDc/011-go-api-auth-jwt/internal/services"
+	"github.com/ChinawatDc/011-go-api-auth-jwt/internal/utils"
 )
 
 type AuthHandler struct {
@@ -82,7 +83,11 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"access_token": access, "token_type": "Bearer"})
+	utils.Success(c, gin.H{
+		"access_token": access,
+		"token_type":   "Bearer",
+	})
+
 }
 
 type logoutReq struct {
