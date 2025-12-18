@@ -1,18 +1,18 @@
 # go-api-auth-jwt — JWT Authentication (Gin + GORM + PostgreSQL)
 
 โปรเจคนี้สอนทำระบบล็อกอินด้วย **JWT (Access Token + Refresh Token)** แบบใช้งานจริง พร้อม:
+
 - Register / Login
 - JWT Middleware (Protect Routes)
-- Refresh Token
+- Refresh Token (ออก Access ใหม่)
 - Logout (Revoke Refresh Token)
-- PostgreSQL + GORM
-- Config ผ่าน .env (Viper)
-
-> เหมาะสำหรับใช้เป็นฐานของระบบ API ขนาดกลาง–ใหญ่ และต่อยอด Microservices
+- เก็บผู้ใช้ + refresh token ใน PostgreSQL (ผ่าน GORM)
+- Config ผ่าน `.env` (ใช้ Viper)
 
 ---
 
 ## Tech Stack
+
 - Go
 - Gin
 - GORM
@@ -24,73 +24,47 @@
 
 ---
 
-## API Endpoints
+## API Overview
 
 ### Public
-| Method | Path | Description |
-|------|------|-------------|
-| POST | /auth/register | สมัครสมาชิก |
-| POST | /auth/login | ล็อกอิน |
-| POST | /auth/refresh | ต่ออายุ access token |
-| POST | /auth/logout | ออกจากระบบ |
+
+- POST /auth/register
+- POST /auth/login
+- POST /auth/refresh
+- POST /auth/logout
 
 ### Protected
-| Method | Path | Description |
-|------|------|-------------|
-| GET | /me | ดูข้อมูลผู้ใช้ |
+
+- GET /me
 
 ---
 
 ## Project Structure
 
-```bash
+```
 go-api-auth-jwt/
 ├─ cmd/api/main.go
 ├─ internal/
-│  ├─ config
-│  ├─ db
-│  ├─ models
-│  ├─ repositories
-│  ├─ services
-│  ├─ middlewares
-│  ├─ handlers
-│  └─ routes
-├─ docker-compose.yml
+│  ├─ config/
+│  ├─ db/
+│  ├─ models/
+│  ├─ repositories/
+│  ├─ services/
+│  ├─ middlewares/
+│  ├─ handlers/
+│  └─ routes/
 ├─ .env.example
+├─ docker-compose.yml
+├─ go.mod
 └─ README.md
 ```
 
 ---
 
-## Quick Start
+## Environment Config (.env.example)
 
-### 1) Clone & Install
-```bash
-go mod tidy
 ```
-
-### 2) Setup ENV
-```bash
-cp .env.example .env
-```
-
-### 3) Run PostgreSQL
-```bash
-docker compose up -d
-```
-
-### 4) Run API
-```bash
-go run ./cmd/api
-```
-
-Server: http://localhost:8080
-
----
-
-## ENV Example
-
-```env
+APP_NAME=go-api-auth-jwt
 APP_PORT=8080
 
 DB_HOST=localhost
@@ -99,8 +73,9 @@ DB_USER=postgres
 DB_PASSWORD=postgres
 DB_NAME=go_auth
 
-JWT_ACCESS_SECRET=change-me-access
-JWT_REFRESH_SECRET=change-me-refresh
+JWT_ISSUER=go-api-auth-jwt
+JWT_ACCESS_SECRET=super-access-secret-change-me
+JWT_REFRESH_SECRET=super-refresh-secret-change-me
 
 ACCESS_TOKEN_MINUTES=15
 REFRESH_TOKEN_DAYS=7
@@ -108,26 +83,63 @@ REFRESH_TOKEN_DAYS=7
 
 ---
 
-## Security Concept
-- Hash password ด้วย bcrypt
-- แยก Access / Refresh Secret
-- Access Token อายุสั้น
-- Refresh Token เก็บแบบ hash ใน DB
-- Logout = revoke refresh token
+## Docker Compose
+
+```
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: go_auth
+    ports:
+      - "5432:5432"
+```
 
 ---
 
-## Next Improvements
+## Security Design
+
+- Password hash ด้วย bcrypt
+- Access token อายุสั้น
+- Refresh token อายุยาว เก็บแบบ hash ใน DB
+- แยก secret access / refresh
+- ตรวจ revoke / expire ทุกครั้ง
+
+---
+
+## Example cURL
+
+### Register
+
+```
+curl -X POST http://localhost:8080/auth/register -H "Content-Type: application/json" -d '{"email":"test@example.com","password":"123456"}'
+```
+
+### Login
+
+```
+curl -X POST http://localhost:8080/auth/login -H "Content-Type: application/json" -d '{"email":"test@example.com","password":"123456"}'
+```
+
+### Protected Route
+
+```
+curl http://localhost:8080/me -H "Authorization: Bearer ACCESS_TOKEN"
+```
+
+---
+
+## Next Step
+
 - Refresh Token Rotation
-- Role / Permission
-- Email Verification
 - Rate Limit
+- Email Verification
+- RBAC
+- Logging / Monitoring
 - Unit Test
-- Observability (Log / Metrics)
 
 ---
 
-## Author
-Chinawat Daochai  
-Course: Mastering Go API Development
-# 011-go-api-auth-jwt
+Author: Chinawat Daochai
